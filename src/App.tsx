@@ -174,6 +174,28 @@ export default function App() {
     );
   }
 
+  if (publicPortfolioId) {
+    return (
+      <div className="flex bg-black min-h-screen text-zinc-200 font-sans selection:bg-emerald-500/30 overflow-hidden">
+        <MatrixBackground />
+        <div className="flex-1 overflow-y-auto relative z-10 w-full h-full">
+          <Suspense fallback={
+            <div className="h-screen flex items-center justify-center">
+              <Loader2 className="animate-spin text-emerald-500" size={48} />
+            </div>
+          }>
+            <div className="p-4 md:p-8">
+              <StudentPortfolio 
+                userId={publicPortfolioId} 
+                onBack={() => { window.location.href = '/'; }} 
+              />
+            </div>
+          </Suspense>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="h-screen bg-black flex flex-col items-center justify-center text-white relative overflow-hidden">
@@ -472,7 +494,7 @@ export default function App() {
         onClose={() => setIsNotificationsOpen(false)} 
       />
 
-      <BuddyLive />
+      <BuddyLive hidden={!!selectedLesson} />
       <Toaster position="top-right" theme="dark" richColors />
 
       {activeChat && (

@@ -20,15 +20,18 @@ import {
   ArrowUpDown,
   Calendar,
   FileText,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { Submission, Course, Assignment } from '../types';
 import { cn } from '../lib/utils';
 import RichTextEditor from './RichTextEditor';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { collection, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../lib/firestoreError';
 import { toast } from 'sonner';
+import { autoGradeSubmission } from '../services/gemini';
+import { createNotification } from '../services/notificationService';
 
 export default function ReviewTab() {
   const [submissions, setSubmissions] = useState<(Submission & { assignmentTitle: string })[]>([]);
@@ -73,8 +76,55 @@ export default function ReviewTab() {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'submittedAt' | 'dueDate' | 'createdAt'>('submittedAt');
   const [assignmentFeedback, setAssignmentFeedback] = useState<{ [id: string]: string }>({});
+  const [isAIGrading, setIsAIGrading] = useState(false);
 
   const currentAssignment = assignments.find(a => a.id === selectedAssignmentId);
+
+  const handleAIGrade = async () => {
+    if (!selectedSubmission) return;
+    const assignment = assignments.find(a => a.id === selectedSubmission.assignmentId);
+    if (!assignment || !assignment.rubric || assignment.rubric.length === 0) {
+      toast.error('Assignment must have a rubric for AI grading.');
+      return;
+    }
+
+    setIsAIGrading(true);
+    toast.info('AI is evaluating the submission...', { duration: 4000 });
+    
+    try {
+      const result = await autoGradeSubmission(
+        assignment.description,
+        assignment.rubric,
+        selectedSubmission.content
+      );
+      
+      const newRubricGrades = result.rubricGrades || {};
+      const newTotalGrade = result.totalGrade || 0;
+      let newFeedback = result.feedback || '';
+
+      // Force HTML format out of markdown if it returned MD (RichTextEditor expects HTML-like or translates it roughly, but we can append it directly to current)
+      const formattedFeedback = `
+        <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl mb-4">
+          <p class="text-sm font-bold text-emerald-400 flex items-center gap-2 mb-2">✨ AI Mentor Analysis</p>
+          <div class="text-sm text-zinc-300">
+            ${newFeedback.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}
+          </div>
+        </div>
+      `;
+
+      await handleUpdateStatus(selectedSubmission.id, {
+        rubricGrades: newRubricGrades,
+        grade: newTotalGrade,
+        feedback: (selectedSubmission.feedback || '') + formattedFeedback
+      });
+      
+      toast.success('AI Grading applied successfully. Please review the results.');
+    } catch (error) {
+      toast.error('AI Grading failed. Please try again or grade manually.');
+    } finally {
+      setIsAIGrading(false);
+    }
+  };
 
   const filteredSubmissions = submissionsWithTitles
     .filter(s => {
@@ -103,6 +153,16 @@ export default function ReviewTab() {
     try {
       await updateDoc(doc(db, 'submissions', id), updates);
       toast.success('Submission updated');
+      
+      const sub = submissionsWithTitles.find(s => s.id === id);
+      if (sub) {
+        if (updates.status === 'reviewed') {
+          await createNotification(sub.studentId, 'grade', 'Assignment Graded', `Your submission for "${sub.assignmentTitle}" has been graded.`);
+        } else if (updates.status === 'resubmit') {
+          await createNotification(sub.studentId, 'grade', 'Revision Requested', `Your submission for "${sub.assignmentTitle}" needs revisions.`);
+        }
+      }
+
       if (selectedSubmission?.id === id) {
         setSelectedSubmission(prev => prev ? { ...prev, ...updates } : null);
       }
@@ -114,7 +174,17 @@ export default function ReviewTab() {
 
   const handleBulkUpdateStatus = async (status: 'pending' | 'reviewed' | 'resubmit') => {
     try {
-      await Promise.all(selectedIds.map(id => updateDoc(doc(db, 'submissions', id), { status })));
+      await Promise.all(selectedIds.map(async (id) => {
+        await updateDoc(doc(db, 'submissions', id), { status });
+        const sub = submissionsWithTitles.find(s => s.id === id);
+        if (sub) {
+          if (status === 'reviewed') {
+            await createNotification(sub.studentId, 'grade', 'Assignment Graded', `Your submission for "${sub.assignmentTitle}" has been graded.`);
+          } else if (status === 'resubmit') {
+            await createNotification(sub.studentId, 'grade', 'Revision Requested', `Your submission for "${sub.assignmentTitle}" needs revisions.`);
+          }
+        }
+      }));
       toast.success(`Updated ${selectedIds.length} submissions`);
       setSelectedIds([]);
     } catch (err) {
@@ -413,9 +483,19 @@ export default function ReviewTab() {
                     <p className="text-xs text-emerald-500 font-medium">{selectedSubmission.assignmentTitle}</p>
                   </div>
                 </div>
-                <button onClick={() => setSelectedSubmission(null)} className="text-zinc-500 hover:text-white transition-colors">
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={handleAIGrade} 
+                    disabled={isAIGrading}
+                    className="flex items-center gap-2 text-xs font-bold text-emerald-950 bg-emerald-500 px-4 py-2 rounded-xl hover:bg-emerald-400 transition-colors disabled:opacity-50"
+                  >
+                    {isAIGrading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                    {isAIGrading ? 'Analyzing...' : 'Grade with AI'}
+                  </button>
+                  <button onClick={() => setSelectedSubmission(null)} className="text-zinc-500 hover:text-white transition-colors">
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
 
               <div className="p-8 overflow-y-auto space-y-8">

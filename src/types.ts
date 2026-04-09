@@ -51,6 +51,8 @@ export interface AppUser {
   bookmarkedLessonIds?: string[]; // Track bookmarked lessons
   xp?: number;
   level?: number;
+  streak?: number;        // Consecutive days active
+  lastActiveAt?: number;  // Timestamp of last activity (used to compute streak)
   createdAt: number;
   availability?: MentorAvailability;
 }
@@ -318,5 +320,42 @@ export interface Comment {
   authorName: string;
   authorPhoto: string;
   content: string;
+  createdAt: number;
+}
+
+export interface ForumThread {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: number;
+  authorId: string;
+  authorName: string;
+  repliesCount: number;
+  tags?: string[];
+  category?: string;
+  upvotes?: number;
+  upvotedBy?: string[];
+}
+
+export interface ForumReply {
+  id: string;
+  threadId: string;
+  content: string;
+  createdAt: number;
+  authorId: string;
+  authorName: string;
+  upvotes?: number;
+  upvotedBy?: string[];
+  isAI?: boolean;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: 'grade' | 'reply' | 'system' | 'mention';
+  title: string;
+  message: string;
+  link?: string;
+  read: boolean;
   createdAt: number;
 }

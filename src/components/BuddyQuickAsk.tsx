@@ -1,24 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquare, Send, Sparkles, Loader2, X, ChevronRight } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, Loader2, X, ChevronRight, Clock } from 'lucide-react';
 import { askBuddy } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
+
+const COOLDOWN_MS = 10_000; // 10 second cooldown between AI requests
 
 export default function BuddyQuickAsk() {
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [cooldownLeft, setCooldownLeft] = useState(0);
+  const cooldownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Tick down the cooldown every second
+  useEffect(() => {
+    if (cooldownLeft <= 0) return;
+    cooldownTimer.current = setInterval(() => {
+      setCooldownLeft(prev => {
+        if (prev <= 1000) {
+          clearInterval(cooldownTimer.current!);
+          return 0;
+        }
+        return prev - 1000;
+      });
+    }, 1000);
+    return () => clearInterval(cooldownTimer.current!);
+  }, [cooldownLeft]);
 
   const handleAsk = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    
+    if (!query.trim() || cooldownLeft > 0) return;
+
     setLoading(true);
     setIsOpen(true);
     try {
       const res = await askBuddy('', query);
       setResponse(res);
+      setCooldownLeft(COOLDOWN_MS); // start cooldown after successful call
     } catch (err) {
       setResponse("Sorry, I encountered an error. Please try again.");
     } finally {
@@ -46,10 +66,16 @@ export default function BuddyQuickAsk() {
         />
         <button
           type="submit"
-          disabled={loading || !query.trim()}
-          className="absolute right-2 top-2 bottom-2 px-4 bg-emerald-500 text-black rounded-xl hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading || !query.trim() || cooldownLeft > 0}
+          className="absolute right-2 top-2 bottom-2 px-4 bg-emerald-500 text-black rounded-xl hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs font-bold"
         >
-          {loading ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+          {loading ? (
+            <Loader2 className="animate-spin" size={18} />
+          ) : cooldownLeft > 0 ? (
+            <><Clock size={14} />{Math.ceil(cooldownLeft / 1000)}s</>
+          ) : (
+            <Send size={18} />
+          )}
         </button>
       </form>
 

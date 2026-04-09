@@ -182,12 +182,12 @@ function StudentDashboard({
   React.useEffect(() => {
     if (!user) return;
     
-    const qQuizzes = query(collection(db, 'quizAttempts'), where('userId', '==', user.uid), orderBy('timestamp', 'asc'), limit(50));
+    const qQuizzes = query(collection(db, 'quizAttempts'), where('studentId', '==', user.uid), orderBy('completedAt', 'asc'), limit(50));
     const qSubmissions = query(collection(db, 'submissions'), where('studentId', '==', user.uid), limit(50));
     const qAssignments = query(collection(db, 'assignments'));
     const qBadges = query(collection(db, 'badges'));
     const qUserBadges = query(collection(db, 'userBadges'), where('userId', '==', user.uid));
-    const qActivity = query(collection(db, 'progressUpdates'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'), limit(10));
+    const qActivity = query(collection(db, 'progressUpdates'), where('studentId', '==', user.uid), orderBy('updatedAt', 'desc'), limit(10));
     
     const unsubQuizzes = onSnapshot(qQuizzes, (snap) => {
       setQuizCount(snap.size);
@@ -197,7 +197,7 @@ function StudentDashboard({
         return {
           name: lesson?.title || 'Quiz',
           score: data.score,
-          timestamp: data.timestamp
+          timestamp: data.completedAt
         };
       }));
       setLoadingData(false);
@@ -338,9 +338,18 @@ function StudentDashboard({
 
   const bookmarkedLessons = lessons.filter(l => user?.bookmarkedLessonIds?.includes(l.id));
 
+  // Stable deterministic hash so the radar doesn't flicker on re-render
+  const hashSkillToScore = (skill: string) => {
+    let hash = 0;
+    for (let i = 0; i < skill.length; i++) {
+      hash = (hash * 31 + skill.charCodeAt(i)) & 0xffff;
+    }
+    return 50 + (hash % 50); // range 50–99
+  };
+
   const skillData = (user?.skills || ['React', 'TypeScript', 'Node.js', 'Firebase', 'Tailwind']).map(skill => ({
     subject: skill,
-    A: Math.floor(Math.random() * 40) + 60, // Mock mastery data
+    A: hashSkillToScore(skill),
     fullMark: 100,
   }));
 
@@ -414,7 +423,7 @@ function StudentDashboard({
           <Trophy className="text-amber-400 group-hover:scale-110 transition-transform" size={20} />
           <div className="text-xs">
             <p className="text-zinc-500 font-bold uppercase tracking-widest">Current Streak</p>
-            <p className="text-white font-bold">12 Days 🔥</p>
+            <p className="text-white font-bold">{user?.streak || 1} {(user?.streak || 1) === 1 ? 'Day' : 'Days'} 🔥</p>
           </div>
         </div>
       </header>
@@ -747,7 +756,7 @@ function StudentDashboard({
                       Completed <span className="text-white font-bold">"{activity.lessonTitle}"</span>
                     </p>
                     <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-widest font-bold">
-                      {new Date(activity.timestamp).toLocaleDateString()} • {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(activity.updatedAt).toLocaleDateString()} • {new Date(activity.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>

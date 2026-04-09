@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, MicOff, Play, Square, Loader2, Award, CheckCircle2, XCircle, Sparkles, User, Briefcase } from 'lucide-react';
-import { ai } from '../services/gemini';
+import { ai, GEMINI_LIVE_MODEL, GEMINI_MODEL } from '../services/gemini';
 import { Modality, LiveServerMessage } from '@google/genai';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
@@ -62,7 +62,7 @@ export default function MockInterview() {
       processorRef.current.connect(audioContextRef.current.destination);
 
       const session = await ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        model: GEMINI_LIVE_MODEL,
         callbacks: {
           onopen: () => {
             setIsConnecting(false);
@@ -189,7 +189,7 @@ export default function MockInterview() {
     setIsThinking(true);
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: GEMINI_MODEL,
         contents: `Based on the following interview transcript, provide a structured performance review for the candidate.
         
         Transcript:

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import IDE from './IDE';
 import Sandbox from './Sandbox';
 import { Assignment, Submission } from '../types';
-import { GoogleGenAI } from '@google/genai';
+import { ai, GEMINI_MODEL } from '../services/gemini';
 import { handleFirestoreError, OperationType } from '../lib/firestoreError';
 import { db, auth } from '../firebase';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
@@ -10,8 +10,6 @@ import { useAuth } from '../hooks/useAuth';
 import { toast } from 'sonner';
 import { Sparkles, Zap } from 'lucide-react';
 import Markdown from 'react-markdown';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 interface AssignmentIDEProps {
   assignmentId: string;
@@ -134,7 +132,7 @@ export default function AssignmentIDE({ assignmentId }: AssignmentIDEProps) {
     
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: GEMINI_MODEL,
         contents: `You are an expert code reviewer. Analyze this JavaScript code for the assignment: "${assignment.title}".
         
         Assignment Description: ${assignment.description}

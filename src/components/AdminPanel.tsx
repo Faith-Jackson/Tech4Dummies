@@ -169,8 +169,13 @@ export default function AdminPanel() {
   };
 
   const handleRoleChange = async (userId: string, newRole: 'student' | 'mentor' | 'admin') => {
+    if (newRole === 'admin') {
+      const confirmed = window.confirm(`⚠️ You are about to grant ADMIN privileges to this user. This gives full control over the platform. Are you sure?`);
+      if (!confirmed) return;
+    }
     try {
       await setDoc(doc(db, 'users', userId), { role: newRole }, { merge: true });
+      await setDoc(doc(db, 'users_public', userId), { role: newRole }, { merge: true });
       toast.success("User role updated successfully.");
     } catch (error) {
       console.error("Error updating user role:", error);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { FileText, Download, Sparkles, Loader2, Briefcase, Award, Code2, CheckCircle2 } from 'lucide-react';
-import { ai } from '../services/gemini';
+import { ai, GEMINI_MODEL } from '../services/gemini';
 import { useAuth } from '../hooks/useAuth';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -31,7 +31,7 @@ export default function ResumeBuilder() {
 
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: GEMINI_MODEL,
         contents: `You are an expert technical resume writer. Create a professional, ATS-friendly resume for a Junior Web Developer based on the following platform statistics:
         
         Name: ${user.displayName || 'Tech4Dummies Student'}

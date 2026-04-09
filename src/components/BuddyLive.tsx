@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, MicOff, Volume2, VolumeX, Sparkles, X, Loader2, MessageSquare } from 'lucide-react';
-import { ai } from '../services/gemini';
+import { ai, GEMINI_LIVE_MODEL } from '../services/gemini';
 import { Modality, LiveServerMessage } from '@google/genai';
 import { toast } from 'sonner';
 
-export default function BuddyLive() {
+export default function BuddyLive({ hidden = false }: { hidden?: boolean }) {
   const [isActive, setIsActive] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -59,7 +59,7 @@ export default function BuddyLive() {
 
       // Connect to Gemini Live
       const session = await ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        model: GEMINI_LIVE_MODEL,
         callbacks: {
           onopen: () => {
             setIsConnecting(false);
@@ -186,6 +186,8 @@ export default function BuddyLive() {
       stopSession();
     };
   }, []);
+
+  if (hidden) return null;
 
   return (
     <div className="fixed bottom-8 right-8 z-50">

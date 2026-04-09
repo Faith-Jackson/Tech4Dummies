@@ -25,8 +25,9 @@ import {
 } from 'lucide-react';
 import Logo from './Logo';
 import { cn } from '../lib/utils';
-import { db, auth } from '../firebase';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { useAuth } from '../hooks/useAuth';
+import { db } from '../firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 interface SidebarProps {
   role: 'student' | 'mentor' | 'admin';
@@ -38,19 +39,20 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role, activeTab, onTabChange, isCollapsed, onToggle, onLogout }: SidebarProps) {
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!user?.uid) return;
     const q = collection(db, 'announcements');
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const unread = snapshot.docs.filter(doc => !doc.data().readBy?.includes(auth.currentUser?.uid)).length;
+      const unread = snapshot.docs.filter(doc => !doc.data().readBy?.includes(user.uid)).length;
       setUnreadCount(unread);
     }, (err) => {
       console.error("Error fetching announcements count:", err);
     });
     return unsubscribe;
-  }, [auth.currentUser?.uid]);
+  }, [user?.uid]);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['student', 'mentor', 'admin'] },

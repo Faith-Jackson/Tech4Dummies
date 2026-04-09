@@ -39,14 +39,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         unsubscribeSnapshot = onSnapshot(userRef, async (docSnap) => {
           if (docSnap.exists()) {
-            setUser(docSnap.data() as AppUser);
+            const userData = docSnap.data() as AppUser;
+            setUser(userData);
             setLoading(false);
+
+            // --- Streak tracking ---
+            const now = Date.now();
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const todayMs = startOfToday.getTime();
+            const yesterdayMs = todayMs - 86400000;
+
+            const lastActive = userData.lastActiveAt || 0;
+            const currentStreak = userData.streak || 0;
+
+            let newStreak = currentStreak;
+            if (lastActive >= todayMs) {
+              // Already logged in today — no change needed
+              return;
+            } else if (lastActive >= yesterdayMs) {
+              // Was active yesterday — extend streak
+              newStreak = currentStreak + 1;
+            } else {
+              // Gap in activity — reset streak
+              newStreak = 1;
+            }
+
+            try {
+              await setDoc(userRef, { streak: newStreak, lastActiveAt: now }, { merge: true });
+            } catch (err) {
+              // Non-critical — don't block auth flow
+              console.warn('Could not update streak:', err);
+            }
           } else {
             // Create new user
             const newUser: AppUser = {
               uid: firebaseUser.uid,
               email: firebaseUser.email || '',
-              role: 'student', // Default role
+              role: 'student',
               displayName: firebaseUser.displayName || 'New User',
               photoURL: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`,
               cohortId: null,
@@ -54,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               bookmarkedLessonIds: [],
               xp: 0,
               level: 1,
+              streak: 1,
+              lastActiveAt: Date.now(),
               createdAt: Date.now(),
               visibility: 'public'
             };

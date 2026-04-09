@@ -308,31 +308,16 @@ export default function LessonView({ lesson, onBack }: LessonViewProps) {
                 </div>
               )}
 
-              {/* Individual Submission Feedback (Mocked for demo) */}
+              {/* Submission Status — shown after student submits */}
               {submitted && (
-                <div className="bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 p-8 rounded-3xl space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-400">
-                        <CheckCircle2 size={24} />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-white">Your Submission Review</h3>
-                        <p className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Status: Reviewed</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">Grade</p>
-                      <p className="text-3xl font-black text-emerald-500">95%</p>
-                    </div>
+                <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl flex items-center gap-4">
+                  <div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center shrink-0">
+                    <CheckCircle2 size={24} />
                   </div>
-
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Mentor Feedback</h4>
-                    <div 
-                      className="bg-zinc-950/40 backdrop-blur-sm border border-zinc-800 p-6 rounded-2xl prose prose-invert prose-emerald max-w-none text-sm"
-                      dangerouslySetInnerHTML={{ __html: "<p>Great work on the HTML structure! Your use of semantic elements is spot on. One small tip: make sure to always include <code>alt</code> text for your images for accessibility.</p><ul><li>Strong semantic structure</li><li>Clean code formatting</li><li>Good understanding of block vs inline elements</li></ul>" }}
-                    />
+                  <div>
+                    <h3 className="font-bold text-white">Submitted Successfully!</h3>
+                    <p className="text-sm text-zinc-400 mt-1">Your mentor will review your work and provide feedback. You'll be notified once it's graded.</p>
+                    <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">Pending Review</span>
                   </div>
                 </div>
               )}
