@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0171636872",
-  "appId": "1:47150653967:web:a6fcde8e2d9ed3743df97a",
-  "apiKey": "AIzaSyAokWbx004wofzpEJIv58I3BYSqQf-8lkA",
-  "authDomain": "gen-lang-client-0171636872.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-93333dd0-bde2-40e9-9f7a-31596265a4c1",
-  "storageBucket": "gen-lang-client-0171636872.firebasestorage.app",
-  "messagingSenderId": "47150653967",
-  "measurementId": "G-7JJ35W4Q0H"
+  "projectId": "tech4dummies",
+  "appId": "1:1045510978678:web:334569f1bae29e989e7357",
+  "apiKey": "AIzaSyCgdLcp8jFHkotQbSJleT9nxLQwvRwELGI",
+  "authDomain": "tech4dummies.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "tech4dummies.firebasestorage.app",
+  "messagingSenderId": "1045510978678",
+  "measurementId": "G-X44R68QJXJ"
 }
